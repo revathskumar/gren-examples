@@ -1,0 +1,49 @@
+module Main exposing ( main )
+
+
+import Init
+import Node
+import Node exposing ( Program, Environment )
+import Stream exposing ( Stream )
+import Terminal
+
+
+main : Program Model Msg
+main =
+    Node.defineProgram
+        { init = init
+        , update = \msg model -> { model = model, command = Cmd.none}
+        , subscriptions = \_ -> Sub.none
+        }
+
+
+type alias Model =
+    { stdout : Stream
+    , stderr : Stream
+    }
+
+
+type Msg
+    = None
+
+
+init :
+    Environment
+    -> Init.Task
+        { model : Model
+        , command : Cmd Msg
+        }
+init env =
+    Init.await Terminal.initialize
+        <| (\termConfig ->
+            -- Start your own program with the values from Terminal
+            Node.startProgram
+                { model =
+                    { stdout = env.stdout
+                    , stderr = env.stderr
+                    }
+                , command =
+                    Stream.sendLine env.stdout
+                        <| "\u{001B}[32mHello \u{001B}[0;4;31mworld!\n\u{001B}[0m"
+                }
+        )
